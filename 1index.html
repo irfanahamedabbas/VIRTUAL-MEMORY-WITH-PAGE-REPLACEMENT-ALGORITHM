@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Virtual Memory - Page Replacement</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #eef2f7;
+    text-align: center;
+}
+
+.container {
+    background: white;
+    padding: 20px;
+    width: 500px;
+    margin: auto;
+    margin-top: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px gray;
+}
+
+input, select {
+    width: 90%;
+    padding: 8px;
+    margin: 10px;
+}
+
+button {
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+table {
+    margin-top: 20px;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td, th {
+    border: 1px solid black;
+    padding: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Page Replacement Simulator</h1>
+
+<div class="container">
+
+<input type="text" id="pages" placeholder="Enter pages (e.g. 7,0,1,2,0,3,0,4)">
+<input type="number" id="frames" placeholder="Number of frames">
+
+<select id="algo">
+    <option value="fifo">FIFO</option>
+    <option value="lru">LRU</option>
+    <option value="optimal">Optimal</option>
+</select>
+
+<button onclick="run()">Run</button>
+
+<div id="output"></div>
+
+</div>
+
+<script>
+function run() {
+    let pages = document.getElementById("pages").value.split(',').map(Number);
+    let framesCount = parseInt(document.getElementById("frames").value);
+    let algo = document.getElementById("algo").value;
+
+    let frames = [];
+    let faults = 0;
+    let result = [];
+
+    for (let i = 0; i < pages.length; i++) {
+        let page = pages[i];
+
+        if (!frames.includes(page)) {
+            faults++;
+
+            if (frames.length < framesCount) {
+                frames.push(page);
+            } else {
+                let index;
+
+                if (algo === "fifo") {
+                    index = 0;
+                }
+
+                else if (algo === "lru") {
+                    let least = Infinity;
+                    for (let j = 0; j < frames.length; j++) {
+                        let lastUse = -1;
+                        for (let k = i - 1; k >= 0; k--) {
+                            if (frames[j] === pages[k]) {
+                                lastUse = k;
+                                break;
+                            }
+                        }
+                        if (lastUse < least) {
+                            least = lastUse;
+                            index = j;
+                        }
+                    }
+                }
+
+                else if (algo === "optimal") {
+                    let farthest = -1;
+                    for (let j = 0; j < frames.length; j++) {
+                        let nextUse = Infinity;
+                        for (let k = i + 1; k < pages.length; k++) {
+                            if (frames[j] === pages[k]) {
+                                nextUse = k;
+                                break;
+                            }
+                        }
+                        if (nextUse > farthest) {
+                            farthest = nextUse;
+                            index = j;
+                        }
+                    }
+                }
+
+                frames[index] = page;
+            }
+        }
+
+        result.push([...frames]);
+    }
+
+    let table = "<table><tr><th>Step</th><th>Frames</th></tr>";
+
+    for (let i = 0; i < result.length; i++) {
+        table += `<tr>
+                    <td>${pages[i]}</td>
+                    <td>${result[i].join(" , ")}</td>
+                  </tr>`;
+    }
+
+    table += "</table>";
+    table += `<h3>Total Page Faults: ${faults}</h3>`;
+
+    document.getElementById("output").innerHTML = table;
+}
+</script>
+
+</body>
+</html>
